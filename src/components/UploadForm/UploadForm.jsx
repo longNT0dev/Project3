@@ -1,17 +1,26 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect,useContext } from "react";
 import styles from "./UploadForm.module.scss";
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Alert } from "react-bootstrap";
-import PreviewImage from "./PreviewImage";
+import PreviewImage from "./PreviewImage.jsx";
 import {
   db,
   storage,
   ref,
+  addDoc,
+  getDoc,
   doc,
-  setDoc,
+  uploadBytesResumable,
+  collection,
+  getDownloadURL,
 } from "../../services/firebase.service.js";
+import { provinceData } from "./Province.js";
+import { Link } from "react-router-dom";
+import CalculatePrice from "../../helpers/CalculatePrice";
+import AuthContext from "../../contexts/AuthContext";
+
 
 // Handle message error validation
 const validationSchema = yup.object().shape({
@@ -27,67 +36,136 @@ const validationSchema = yup.object().shape({
     .string()
     .required("Nội dung không được để trống")
     .min(10, "Nội dung quá ngắn, nội dung cần nhiều hơn 10 kí tự")
-    .max(100, "Nội dung quá dài,nội dung cần ít hơn 100 kí tự"),
-  name: yup.string().required("Tên người cho thuê không được để trống"),
-  phone: yup
-    .string()
-    .required("Số điện thoại không được để trống")
-    .matches(
-      /(84|0[3|5|7|8|9])+([0-9]{8})\b/g,
-      "Số điện thoại không đúng định dạng"
-    ),
+    .max(300, "Nội dung quá dài,nội dung cần ít hơn 300 kí tự"),
   typeOfNews: yup.number().required("Loại tin không được để trống"),
   dayOfNews: yup.number().required("Số ngày đăng tin không được để trống"),
+  status: yup.number().default(0),
 });
 
 const UploadForm = () => {
+  // handle file
   const [files, setFiles] = useState([]);
-  const [show, setShow] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState(false);
+  const { user } = useContext(AuthContext);
   const days = useMemo(() => Array.from(new Array(100), (x) => 1), []);
+
   // react-hook-form
   const {
     register,
+    watch,
     handleSubmit,
     reset,
     formState: { errors },
   } = useForm({ resolver: yupResolver(validationSchema) });
+
+  // watch fields update realtime
+  const watchFields = watch(
+    ["district", "subDistrict", "street", "typeOfNews", "dayOfNews"],
+    {
+      district: "",
+      subDistrict: "",
+      street: "",
+      typeOfNews: 1,
+      dayOfNews: 1,
+    }
+  );
+
+  // handle update location
+  const [subDistricts, setSubDistricts] = useState([]);
+  const [streets, setStreets] = useState([]);
+  const [typeOfNews, setTypeOfNews] = useState(1);
+  const [dayOfNews, setDayOfNews] = useState(1);
+
+  useEffect(() => {
+    setSubDistricts(
+      provinceData.district.find((e) => e.name === watchFields[0])?.ward
+    );
+    setStreets(
+      provinceData.district.find((e) => e.name === watchFields[0])?.street
+    );
+    setTypeOfNews(watchFields[3] && watchFields[3]);
+    setDayOfNews(watchFields[4] && watchFields[4]);
+  }, [watchFields]);
+
+  // get price
+  const [price, setPrice] = useState({
+    hotPrice: [],
+    vipPrice: [],
+    normalPrice: [],
+  });
+  useEffect(() => {
+    getDoc(doc(db, "prices", "NdBpNYGmsI0pSLkkMke4")).then((result) => {
+      setPrice(
+        Object.assign(
+          {},
+          {
+            hotPrice: result.data()["hot-price"],
+            vipPrice: result.data()["vip-price"],
+            normalPrice: result.data()["normal-price"],
+          }
+        )
+      );
+    });
+  }, []);
+
   const onSubmit = async (data) => {
     if (files.length !== 0) {
       const promises = [];
       const uid = Date.now();
       files.forEach((file) => {
-        const uploadTask = ref(storage, `${uid}/${file.path}`);
+        const uploadTask = uploadBytesResumable(
+          ref(storage, `${file.path}-${uid}`),
+          file
+        ).then((result) => {
+          return getDownloadURL(result.ref);
+        });
+
         promises.push(uploadTask);
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            console.log("ok");
-          },
-          (error) => {
-            console.log(error);
-          }
-        );
       });
+
       Promise.all(promises)
-        .then(() => {
-          data.files = uid;
+        .then((result) => {
+          data.src = result;
+          let date = new Date();
+          let currentTime =
+            date.getDate() +
+            "-" +
+            (date.getMonth() + 1) +
+            "-" +
+            date.getFullYear();
 
           // store to firebase
-          setDoc(doc(db, "posts"), data)
+          addDoc(collection(db, "posts"), { ...data, createdAt: currentTime })
             .then(() => {
-              console.log("success");
+              onShowSuccess();
             })
             .catch((err) => {
-              console.log(err);
+              onShowError();
             });
         })
-        .catch((err) => console.log(err));
+        .catch((err) => onShowError());
     } else {
       alert("Pls choose at least 1 image");
     }
+  };
 
-    // reset form
-    // reset({ ...data });
+  const onShowSuccess = () => {
+    reset();
+    setSuccess(true);
+    setFiles([]);
+    setTimeout(() => {
+      setSuccess(false);
+    }, 2200);
+  };
+
+  const onShowError = () => {
+    reset();
+    setError(true);
+    setFiles([]);
+    setTimeout(() => {
+      setError(false);
+    }, 2200);
   };
 
   return (
@@ -100,9 +178,16 @@ const UploadForm = () => {
               <div className="col">
                 <label>Quận/Huyện(*)</label>
                 <select className="form-select" {...register("district")}>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
+                  <option
+                    label="--Chọn quận/huyện--"
+                    key="district-choose"
+                  ></option>
+                  {provinceData.district.map((e) => (
+                    <option
+                      key={e.id}
+                      value={e.name}
+                    >{`${e.pre} ${e.name}`}</option>
+                  ))}
                 </select>
                 <p style={{ color: "red" }}>{errors.district?.message}</p>
               </div>
@@ -112,18 +197,31 @@ const UploadForm = () => {
               <div className="col">
                 <label>Phường/Xã(*)</label>
                 <select className="form-select" {...register("subDistrict")}>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
+                  <option
+                    label="--Chọn phường/xã--"
+                    key="subDistrict-choose"
+                  ></option>
+                  {subDistricts &&
+                    subDistricts.map((e) => (
+                      <option
+                        key={e.id}
+                        value={e.pre + " " + e.name}
+                      >{`${e.pre} ${e.name}`}</option>
+                    ))}
                 </select>
                 <p style={{ color: "red" }}>{errors.subDistrict?.message}</p>
               </div>
               <div className="col">
                 <label>Đường/Phố(*)</label>
                 <select className="form-select" {...register("street")}>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
+                  <option label="--Chọn đường phố--"></option>
+                  {streets &&
+                    streets.map((e) => (
+                      <option
+                        key={e.id}
+                        value={e.pre + " " + e.name}
+                      >{`${e.pre} ${e.name}`}</option>
+                    ))}
                 </select>
                 <p style={{ color: "red" }}>{errors.street?.message}</p>
               </div>
@@ -137,6 +235,12 @@ const UploadForm = () => {
                       height: "40px",
                       paddingLeft: "12px",
                     }}
+                    defaultValue={
+                      watchFields[0] &&
+                      watchFields[1] &&
+                      watchFields[2] &&
+                      `${watchFields[2]}, ${watchFields[1]}, ${watchFields[0]}`
+                    }
                     className="form-control"
                     type="text"
                     {...register("address")}
@@ -167,9 +271,9 @@ const UploadForm = () => {
               <div className="col">
                 <label>Chuyên mục(*)</label>
                 <select className="form-select" {...register("category")}>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
+                  <option value="Phòng trọ đơn">Phòng trọ đơn</option>
+                  <option value="Chung cư mini">Chung cư mini</option>
+                  <option value="Nhà nguyên căn">Nhà nguyên căn</option>
                 </select>
                 <p style={{ color: "red" }}>{errors.category?.message}</p>
               </div>
@@ -215,16 +319,22 @@ const UploadForm = () => {
               <div className="col">
                 <label>Tên liên hệ(*)</label>
                 <div className="input-group">
-                  <input className="form-control" {...register("name")} />
+                  <input
+                    className="form-control"
+                    value={user && user.displayName}
+                    disabled
+                  />
                 </div>
-                <p style={{ color: "red" }}>{errors.name?.message}</p>
               </div>
               <div className="col">
                 <label>Điện thoại(*)</label>
                 <div className="input-group">
-                  <input className="form-control" {...register("phone")} />
+                  <input
+                    className="form-control"
+                    value={user && user.phoneNumber}
+                    disabled
+                  />
                 </div>
-                <p style={{ color: "red" }}>{errors.phone?.message}</p>
               </div>
             </div>
           </div>
@@ -258,9 +368,8 @@ const UploadForm = () => {
                     >
                       Tin hot
                     </td>
-                    <td>30.000 đ/ngày</td>
-                    <td>189.000 đ/tuần</td>
-                    <td>720.000 đ/tháng</td>
+                    {price.hotPrice &&
+                      price.hotPrice.map((e) => <td key={e}>{e}</td>)}
                   </tr>
                   <tr>
                     <td
@@ -272,9 +381,8 @@ const UploadForm = () => {
                     >
                       Tin vip
                     </td>
-                    <td>20.000 đ/ngày</td>
-                    <td>126.000 đ/tuần</td>
-                    <td>480.000 đ/tháng</td>
+                    {price.vipPrice &&
+                      price.vipPrice.map((e) => <td key={e}>{e}</td>)}
                   </tr>
                   <tr>
                     <td
@@ -282,9 +390,8 @@ const UploadForm = () => {
                     >
                       Tin thường
                     </td>
-                    <td>2.000 đ/ngày</td>
-                    <td>12.600 đ/tuần</td>
-                    <td>48.000 đ/tháng</td>
+                    {price.normalPrice &&
+                      price.normalPrice.map((e) => <td key={e}>{e}</td>)}
                   </tr>
                 </tbody>
               </table>
@@ -320,9 +427,9 @@ const UploadForm = () => {
                 </thead>
                 <tbody>
                   <tr>
-                    <td>1</td>
-                    <td>2</td>
-                    <td>3</td>
+                    <td>{[2000, 20000, 30000][typeOfNews - 1]}</td>
+                    <td>{dayOfNews}</td>
+                    <td>{CalculatePrice(typeOfNews, dayOfNews)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -379,14 +486,29 @@ const UploadForm = () => {
           right: "12px",
           bottom: "50px",
         }}
-        show={show}
+        show={success}
         variant="success"
-        onClose={() => setShow(false)}
-        dismissible
       >
         <p>
           Bài đăng sẽ được kiểm duyệt sớm nhất, bạn có thể kiểm tra trạng thái
-          bài đăng tại đây
+          bài đăng <Link to="/account/quan-li-tin">tại đây</Link>
+        </p>
+      </Alert>
+      <Alert
+        style={{
+          width: "400px",
+          height: "auto",
+          textWrap: "wrap",
+          position: "fixed",
+          right: "12px",
+          bottom: "50px",
+        }}
+        show={error}
+        variant="error"
+      >
+        <p>
+          Có điều gì đó không đúng xảy ra khiến bài đăng không được gửi, hãy
+          kiểm tra và thử lại
         </p>
       </Alert>
     </>

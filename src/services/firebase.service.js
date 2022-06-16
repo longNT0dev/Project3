@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore,doc,setDoc } from "firebase/firestore";
-import { getStorage, ref } from "firebase/storage";
-import { getAuth } from "firebase/auth";
+import { getFirestore,setDoc,addDoc,collection,getDocs,getDoc,doc  } from "firebase/firestore";
+import { getStorage, ref,uploadBytesResumable,getDownloadURL } from "firebase/storage";
+import { getAuth,RecaptchaVerifier,signInWithPhoneNumber,onAuthStateChanged,signOut,updateProfile  } from "firebase/auth";
 
 const app = initializeApp({
   apiKey: "AIzaSyAQqw_YN6yzAhj_4vXJUGn13Def8P_Hw48",
@@ -16,4 +16,8 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
 
-export { db, storage, auth, ref, doc, setDoc };
+export { db, storage, auth, ref, setDoc,uploadBytesResumable,collection,getDocs ,RecaptchaVerifier,signInWithPhoneNumber,
+  doc,onAuthStateChanged,signOut,getDownloadURL,updateProfile,addDoc,getDoc  };
+
+
+

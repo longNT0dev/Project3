@@ -1,21 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { Card, Placeholder } from "react-bootstrap";
 import ProductItem from "../components/ProductItem/ProductItem";
-import { productService } from "../services/product.service";
+import {db,collection,getDocs } from "../services/firebase.service.js"
 
 function ProductList() {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function getProductList() {
-      let result = await productService.getAll();
-      setIsLoading(false);
-      setProducts(result);
-    }
+    async function fetchDataList() {
+      let docs = await getDocs(collection(db,'posts'))
+      let result = []
+      docs.forEach(doc => {
+          doc.data().files = 
+          result.push({id:doc.id,...doc.data()})
+      })
 
-    getProductList();
-  }, [products]);
+      setProducts(result)
+      setIsLoading(false)
+    }
+    fetchDataList()
+  },[]);
 
 
   return (
@@ -39,12 +44,13 @@ function ProductList() {
           <ProductItem
             key={product.id}
             id={product.id}
-            src={product.src}
+            src={product.src[0]}
             title={product.title}
-            desc={product.desc}
+            content={product.content}
             price={product.price}
+            category={product.category}
             area={product.area}
-            location={product.location}
+            address={product.address}
             createdAt={product.createdAt}
           ></ProductItem>
         ))}

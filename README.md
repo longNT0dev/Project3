@@ -8,3 +8,6 @@ Phân tích code + stack
 2. Sử dụng thư viện để xây dựng giao diện (chưa xác định)
 3. Sử dụng react icon: https://react-icons.github.io/react-icons/
 4. Sử dụng yup + react-hook-form để validate dữ liệu
+
+
+Cài đặt delete posts and img in the storage: https://www.pullrequest.com/blog/introduction-to-firebase-storage-part-2/

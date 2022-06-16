@@ -1,13 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Button, Form, Modal } from "react-bootstrap";
 import { FaFacebookF, FaGoogle, FaSignInAlt } from "react-icons/fa";
 import styles from "./Login.module.scss";
-import { auth } from "../../services/firebase.service.js";
-import firebase from "firebase/app";
-
+import {
+  db,
+  collection,
+  setDoc,
+  doc,
+  getDocs,
+  RecaptchaVerifier,
+  auth,
+  signInWithPhoneNumber,
+} from "../../services/firebase.service.js";
+import AuthContext from "../../contexts/AuthContext.js";
 
 // Handle message error validation
 const validationSchema = yup.object().shape({
@@ -15,7 +23,7 @@ const validationSchema = yup.object().shape({
     .string()
     .required("Số điện thoại không được để trống")
     .matches(
-      /(84|0[3|5|7|8|9])+([0-9]{8})\b/g,
+      /(0[3|5|7|8|9])+([0-9]{8})\b/g,
       "Số điện thoại không đúng định dạng"
     ),
 });
@@ -28,28 +36,74 @@ function Login({ setShow }) {
     formState: { errors },
   } = useForm({ resolver: yupResolver(validationSchema) });
 
+
+ 
+  
+
   // step login
   // 0 enter phone phoneNumber
   // 1 enter OTP
   const [step, setStep] = useState(0);
+  const [otp,setOTP] = useState("");
+  const {setUser} = useContext(AuthContext)
 
-  const setUpRecaptcha = () => {
-    window.recaptchaVerifier = new firebase.auth().RecaptchaVerifier(
+  const requestOTP = (data) => {
+    window.recaptchaVerifier = new RecaptchaVerifier(
       "recaptcha-container",
       {
         size: "invisible",
         callback: (response) => {
           // reCAPTCHA solved, allow signInWithPhoneNumber.
-          // auth.signInWithPhoneNumber(response)
-          console.log(response);
         },
-      }
+      },
+      auth
     );
+
+    let appVerifier = window.recaptchaVerifier;
+    let formatPhoneNumber = data.phoneNumber.replace('0','+84')
+    signInWithPhoneNumber(auth, formatPhoneNumber, appVerifier)
+      .then((confirmationResult) => {
+        window.confirmationResult = confirmationResult;
+        setStep(1);
+      })
+      .catch((err) => {
+        window.recaptchaVerifier.clear()
+      });
   };
 
-  const onSubmit = (data) => {
-    setUpRecaptcha();
-  };
+  const verifyOTP = (otp) => {
+    setOTP(otp)
+    if(otp.length === 6) {
+      window.confirmationResult.confirm(otp).then((result) => {
+        console.log(result)
+        // Check to add new user to db 
+        getDocs(collection(db,"users")).then(docs => {
+          let isExist = true
+          for(let e of docs.docs) {
+            if(e.id === result.user.uid) {
+              isExist = false
+              break
+            }
+          }
+          if(isExist) {
+            setDoc(doc(db,"users",result.user.uid),{
+              isVerify: false,
+              balance: 0,
+              posts: []
+            })
+          }
+        })
+        // User signed in successfully.
+        const user = result.user;
+        setUser(user)
+        setShow(0)
+
+      }).catch((error) => {
+        // User couldn't sign in (bad verification code?)
+        // ...
+      });
+    }
+  }
 
   return (
     <>
@@ -58,7 +112,7 @@ function Login({ setShow }) {
           <Modal.Title>Đăng nhập</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form onSubmit={handleSubmit(onSubmit)}>
+          <Form onSubmit={handleSubmit(requestOTP)}>
             {
               {
                 0: (
@@ -73,7 +127,7 @@ function Login({ setShow }) {
                     </span>
                     <br />
                     <Button
-                      className={styles.signIn + " container"}
+                      className={`${styles.signIn} container mb-3 }`}
                       type="submit"
                     >
                       <FaSignInAlt className="me-1 mb-1" />
@@ -82,11 +136,18 @@ function Login({ setShow }) {
                     <div id="recaptcha-container"></div>
                   </Form.Group>
                 ),
-                1: <Form.Group></Form.Group>,
+                1: <Form.Group>
+                   <Form.Control
+                      type="text"
+                      onChange={(e) => verifyOTP(e.target.value)}
+                      value={otp}
+                      placeholder="Nhập mã OTP"
+                    />
+                </Form.Group>,
               }[step]
             }
 
-            <hr />
+            {/* <hr />
             <Form.Group className="d-grid gap-2">
               <Button
                 className={`${styles.fSignIn} d-flex align-items-center justify-content-center`}
@@ -100,7 +161,7 @@ function Login({ setShow }) {
                 <FaGoogle className="me-1 ms-1" />
                 Đăng nhập bằng google
               </Button>
-            </Form.Group>
+            </Form.Group> */}
           </Form>
         </Modal.Body>
       </Modal>

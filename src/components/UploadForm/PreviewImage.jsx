@@ -15,8 +15,8 @@ const thumb = {
   border: "1px solid #eaeaea",
   marginBottom: 8,
   marginRight: 8,
-  width: 200,
-  height: 200,
+  width: 300,
+  height: 300,
   padding: 4,
   boxSizing: "border-box",
 };
@@ -71,7 +71,7 @@ const PreviewImage = ({files,setFiles}) => {
           //   URL.revokeObjectURL(file.preview);
           // }}
         />
-        <FaWindowClose onClick={() => handleDelete(index)} style={{position: 'absolute',right:'0px',top:'-4px',color: 'white',cursor: 'pointer'}}>X</FaWindowClose>
+        <FaWindowClose onClick={() => handleDelete(index)} style={{position: 'absolute',right:'0px',cursor: 'pointer'}}>X</FaWindowClose>
       </div>
     </div>
   ));
