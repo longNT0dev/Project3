@@ -20,6 +20,8 @@ import { provinceData } from "./Province.js";
 import { Link } from "react-router-dom";
 import CalculatePrice from "../../helpers/CalculatePrice";
 import AuthContext from "../../contexts/AuthContext";
+import { facilityOptions } from "../Search/SearchConstant";
+import Select from "react-select";
 
 
 // Handle message error validation
@@ -76,6 +78,13 @@ const UploadForm = () => {
   const [streets, setStreets] = useState([]);
   const [typeOfNews, setTypeOfNews] = useState(1);
   const [dayOfNews, setDayOfNews] = useState(1);
+
+  // handle update facilities 
+  const [facilities, setFacilities] = useState([])
+  const handleChangeFacilities = (e) => {
+    console.log("hello",e)
+    setFacilities(e.map(e => e.value))
+  }
 
   useEffect(() => {
     setSubDistricts(
@@ -290,6 +299,18 @@ const UploadForm = () => {
                 <p style={{ color: "red" }}>{errors.area?.message}</p>
               </div>
             </div>
+
+            <div className="row mb-3">
+              <label>Chọn cơ sở vật chất(*)</label>
+              <Select
+                required
+                placeholder="Chọn cơ sở vật chất"
+                options={facilityOptions}
+                onChange={((e) => handleChangeFacilities(e))}
+                isMulti
+              />
+            </div>
+
             <div className="row mb-3">
               <div className="col">
                 <label>Giá cho thuê(*)</label>

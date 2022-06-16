@@ -66,21 +66,21 @@ function App() {
   );
 }
 
-{
-  /* <Suspense
-        fallback={
-          <Hypnosis
-            style={{
-              width: "100%",
-              height: "100%",
-              position: "absolute",
-              top: "0",
-              backgroundColor: "#222",
-              zIndex: "9999",
-            }}
-          />
-        }
-      ></Suspense> */
-}
+// {
+//   /* <Suspense
+//         fallback={
+//           <Hypnosis
+//             style={{
+//               width: "100%",
+//               height: "100%",
+//               position: "absolute",
+//               top: "0",
+//               backgroundColor: "#222",
+//               zIndex: "9999",
+//             }}
+//           />
+//         }
+//       ></Suspense> */
+// }
 
 export default App;
