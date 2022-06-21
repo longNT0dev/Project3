@@ -82,7 +82,6 @@ const UploadForm = () => {
   // handle update facilities 
   const [facilities, setFacilities] = useState([])
   const handleChangeFacilities = (e) => {
-    console.log("hello",e)
     setFacilities(e.map(e => e.value))
   }
 
@@ -136,6 +135,9 @@ const UploadForm = () => {
       Promise.all(promises)
         .then((result) => {
           data.src = result;
+          data.facilities = facilities
+          data.userRef = doc(db,"users",user.uid)
+          data.uid = user.uid
           let date = new Date();
           let currentTime =
             date.getDate() +

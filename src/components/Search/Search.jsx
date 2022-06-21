@@ -135,12 +135,7 @@ const Search = () => {
           </div>
           <div className={styles.searchbar_items_button}>
             <button className={styles.searchbar_items_button_execute}>
-              <Link
-                to="productDetail"
-                className="searchbar_items_button_explore_toProductDetail"
-              >
                 Tìm kiếm
-              </Link>
             </button>
           </div>
         </div>

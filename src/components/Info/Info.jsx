@@ -25,7 +25,7 @@ function Info() {
         <div className="row">
           <ul className="nav nav-pills">
             {childRoute.map((e) => (
-              <li className='nav-item'>
+              <li key={e.link} className='nav-item'>
                 <Link className={'nav-link' + isActiveLink(e.link)} to={e.link}>
                   {e.title}
                 </Link>
