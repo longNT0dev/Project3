@@ -4,16 +4,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AuthContext from "./contexts/AuthContext";
 import {
   onAuthStateChanged,
-  auth,
-  getDoc,
-  doc,
-  db,
+  auth
 } from "./services/firebase.service.js";
 import Home from "./containers/Home";
 import Admin from "./components/Admin/Admin";
 import UploadForm from "./components/UploadForm/UploadForm";
 import Header from "./components/Header/Header";
-import Footer from "./components/Footer/Footer";
 import Info from "./components/Info/Info";
 import AccountManager from "./components/AccountManager/AccountManager";
 import VerifyAccount from "./components/AccountManager/VerifyAccount";
@@ -22,10 +18,16 @@ import ProductDetail from "./components/ProductDetail/ProductDetail";
 import PostManager from "./components/AccountManager/PostManager";
 import ChargeMoney from "./components/AccountManager/ChargeMoney";
 import ChargeHistory from "./components/AccountManager/ChargeHistory";
+import VerifyPost from "./components/Admin/VerifyPost";
+import VerifyUser from "./components/Admin/VerifyUser";
+import ManageUser from "./components/Admin/ManageUser";
+import Favorite from "./components/Favorite/Favorite";
 
 function App() {
   // console.log = console.warn = console.error = () => {};
-  const [currentUser, setCurrentUser] = useState(localStorage.user && JSON.parse(localStorage.user));
+  const [currentUser, setCurrentUser] = useState(
+    localStorage.user && JSON.parse(localStorage.user)
+  );
 
   onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -33,7 +35,6 @@ function App() {
       // User is signed out
       setCurrentUser(null);
       delete localStorage.user;
-      delete localStorage.uid
     }
   });
 
@@ -54,7 +55,18 @@ function App() {
           <Routes>
             <Route index element={<Home />} />
             <Route path="admin" element={<PrivateRoute roles={["admin"]} />}>
-              <Route index element={<Admin />}></Route>
+              <Route element={<Admin />}>
+                <Route index element={<AccountManager />}></Route>
+                <Route path="duyet-bai-dang" element={<VerifyPost />}></Route>
+                <Route
+                  path="xac-thuc-nguoi-dung"
+                  element={<VerifyUser />}
+                ></Route>
+                <Route
+                  path="quan-li-nguoi-dung"
+                  element={<ManageUser />}
+                ></Route>
+              </Route>
             </Route>
             <Route
               path="products/:productId"
@@ -65,6 +77,13 @@ function App() {
               element={<PrivateRoute roles={["admin", "owner"]} />}
             >
               <Route index element={<UploadForm />}></Route>
+            </Route>
+
+            <Route
+              path="favorite"
+              element={<PrivateRoute roles={["admin", "owner"]} />}
+            >
+              <Route index element={<Favorite />}></Route>
             </Route>
 
             <Route
@@ -80,12 +99,10 @@ function App() {
               </Route>
             </Route>
           </Routes>
-          <Footer></Footer>
         </BrowserRouter>
       </div>
     </AuthContext.Provider>
   );
 }
-
 
 export default App;

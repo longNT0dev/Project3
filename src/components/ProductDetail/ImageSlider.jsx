@@ -1,37 +1,15 @@
-import React, { useState } from "react";
-import { FaArrowAltCircleLeft, FaArrowAltCircleRight } from "react-icons/fa";
-import "./ImageSlider.css";
+import React from "react";
+import ImageGallery from 'react-image-gallery';
+import "react-image-gallery/styles/css/image-gallery.css"
 
-const ImageSlider = ({slides}) => {
-    const [current, setCurrent] = useState(0);
-    
+const ImageSlider = ({ slides }) => {
     if (!Array.isArray(slides) || slides.length <= 0) {
         return null;
     }
-
-    const nextSlide = () => {
-        setCurrent(current === slides.length - 1 ? 0 : current + 1);
-    }
-
-    const prevSlide = () => {
-        setCurrent(current === 0 ? slides.length - 1 : current - 1);
-    }
+    const images = slides.map(src => ({ original: src, thumbnail: src, originalWidth: "600px", originalHeight: "320px", thumbnailWidth: '250px!important', thumbnailHeight: "150px!important" }))
 
     return (
-        <section className="custom_slider">
-            <FaArrowAltCircleLeft className="custom_left-arrow" onClick={prevSlide}/>
-            <FaArrowAltCircleRight className="custom_right-arrow" onClick={nextSlide}/>
-            {slides && slides.map((slide, index) => {
-                return (
-                    <div
-                        className={index === current ? 'custom_slide active' : 'custom_slide'}
-                        key={index}>
-                        {index === current && (<img src={slide} alt="OKOK" className="custom_image"/>)}
-                        
-                    </div>
-                );
-            })}
-        </section>
+        <ImageGallery items={images} showFullscreenButton={false} showPlayButton={false} showBullets={true} />
     );
 };
 

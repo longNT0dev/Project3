@@ -17,6 +17,7 @@ import {
   signInWithPhoneNumber,
 } from "../../services/firebase.service.js";
 import AuthContext from "../../contexts/AuthContext.js";
+import { Navigate } from "react-router-dom";
 
 // Handle message error validation
 const validationSchema = yup.object().shape({
@@ -90,6 +91,8 @@ function Login({ setShow }) {
                 avatar: "",
                 phoneNumber: result.user.phoneNumber,
                 name: result.user.phoneNumber,
+                isRequestVerify: 0,
+                imgForVerify: []
               });
             }
           });
@@ -99,10 +102,14 @@ function Login({ setShow }) {
         .then((userCredentials) => {
           // User signed in successfully.
           getDoc(doc(db, "users", userCredentials.user.uid)).then((result) => {
-            localStorage.user = JSON.stringify(
-              Object.assign(result.data(), { uid: userCredentials.user.uid })
-            );
-            setUser(JSON.parse(localStorage.user));
+            let userInfo = Object.assign(result.data(), {
+              uid: userCredentials.user.uid,
+            });
+            localStorage.user = JSON.stringify(userInfo);
+            setUser(userInfo);
+            if (result.data().role === "admin") {
+              window.location.href = "/admin";
+            }
           });
           setShow(0);
         })

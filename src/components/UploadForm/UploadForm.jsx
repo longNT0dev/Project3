@@ -181,7 +181,7 @@ const UploadForm = () => {
 
   return (
     <>
-      <div className={`${styles.container} container row`}>
+      <div className={`${styles.container} container row`} style={{display: 'flex',alignItems:'start',minWidth:'1140px'}}>
         <form className="col-8 text-start" onSubmit={handleSubmit(onSubmit)}>
           <div className="row shadow bg-body rounded mb-5">
             <h3>Địa chỉ cho thuê</h3>
@@ -344,7 +344,7 @@ const UploadForm = () => {
                 <div className="input-group">
                   <input
                     className="form-control"
-                    value={user && user.displayName}
+                    value={user && user.name}
                     disabled
                   />
                 </div>
@@ -470,7 +470,7 @@ const UploadForm = () => {
         </form>
 
         <div
-          style={{ border: "1px solid black", height: "fit-content" }}
+          style={{ border: "1px solid black", height: "fit-content",minWidth: "364px"}}
           className="col-4 px-0"
         >
           <h3 className="ps-2">Hướng dẫn đăng tin</h3>

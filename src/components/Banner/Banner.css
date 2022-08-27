@@ -3,44 +3,47 @@
     height: 750px;
 }
 
-@media only screen and (min-width: 960px) {
-    .banner_container {
-        height: calc(100vh - 87.5px);
-        padding: 0px;
-        background-color: #f6dddf;
-        justify-content: center;
-        display: flex;
-        flex-direction: row;
-        max-height: 700px;
-    }
+.banner_container {
+    height: calc(100vh - 87.5px);
+    padding: 0px;
+    background-color: #f6dddf;
+    justify-content: center;
+    display: flex;
+    flex-direction: row;
+    max-height: 700px;
 }
+
 
 
 .banner_container .banner_illustration {
     width: 40%;
+    padding-top: 120px;
 }
 
 .banner_container .banner_illustration .banner_img {
-    margin-top: 23%;
-    max-height: 70%;
+    
+    width: 700px;
+    height:450px
     
 }
 
 .banner_container .banner_introduction {
     width: 60%;
     text-align: left;
-    margin-top: 12%;
     color: #687a80;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .banner_container .banner_introduction .banner_intro_title {
     border-radius: 10px;
-    font-size: 5em;
-    display: inline;
+    font-size: 4em;
     background-color: #f7f7f7;
     font-weight: 700;
     font-family: 'Courier New', Courier, serif;
     padding:  5px 15px;
+    width: fit-content;
 
 }
 
@@ -52,6 +55,7 @@
     color: grey;
     padding: 10px 15px;
     background-color: #f7f7f7;
+    min-width:450px
 }
 
 .banner_container .banner_introduction .banner_intro_description .banner_intro_button_explore {

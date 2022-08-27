@@ -11,3 +11,9 @@ Phân tích code + stack
 
 
 Cài đặt delete posts and img in the storage: https://www.pullrequest.com/blog/introduction-to-firebase-storage-part-2/
+
+
+
+
+
+

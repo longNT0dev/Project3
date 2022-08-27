@@ -53,7 +53,7 @@ function PostManager() {
               <th>{i + 1}</th>
               <td>
                 {" "}
-                <Link to={`/products/${e.id}`}>
+                <Link target="_blank" to={`/products/${e.id}`}>
                   {e.id}
                 </Link>
               </td>

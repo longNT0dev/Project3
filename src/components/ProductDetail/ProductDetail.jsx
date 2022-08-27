@@ -1,11 +1,23 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import "./ProductDetail.css";
 import { default as ImageSlider } from "./ImageSlider";
 import { FaStar } from "react-icons/fa";
-import { useEffect } from "react";
-import { doc, getDoc, db } from "../../services/firebase.service";
-import { useParams } from "react-router-dom";
+import {
+  doc,
+  getDoc,
+  db,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  collection,
+} from "../../services/firebase.service";
+import { Link, useParams } from "react-router-dom";
 import { facilityOptions } from "../Search/SearchConstant";
+import AuthContext from "../../contexts/AuthContext";
+import { BsMessenger } from "react-icons/bs";
+import { Button } from "react-bootstrap";
+
 const colors = {
   orange: "#FFBA5A",
   grey: "#A9A9A9",
@@ -45,24 +57,37 @@ const ratingStyles = {
 
 function ProductDetail() {
   const stars = Array(5).fill(0);
-  const [currentValue, setCurrentValue] = useState(0);
-  const [hoverValue, setHoverValue] = useState();
+  const [rate, setRate] = useState(0);
+  const [error, setError] = useState("");
+  const [comment, setComment] = useState("");
+  const { productId } = useParams();
+  const { user } = useContext(AuthContext);
 
   const handleClick = (value) => {
-    setCurrentValue(value);
+    setRate(value);
   };
 
-  const handleMouseOver = (value) => {
-    setHoverValue(value);
-  };
-
-  const handleMouseLeave = () => {
-    setHoverValue(null);
+  const handleSubmitComment = () => {
+    if (comment) {
+      addDoc(collection(db, "comments"), {
+        rate: rate,
+        comment: comment,
+        sender: {
+          avatar: user.avatar,
+          name: user.name,
+        },
+        productId: productId,
+      }).then(() => {
+        window.location.reload();
+      });
+    } else {
+      setError("Comment không được để trống");
+    }
   };
 
   // get detail product
-  const { productId } = useParams();
-  const [productDetail, setProductDetail] = useState(); 
+  const [productDetail, setProductDetail] = useState();
+
   useEffect(() => {
     async function getDetailProduct(productId) {
       let result = await getDoc(doc(db, "posts", productId));
@@ -73,16 +98,83 @@ function ProductDetail() {
     getDetailProduct(productId);
   }, [productId]);
 
+  const [owner, setOwner] = useState();
+  useEffect(() => {
+    async function getOwnerInfo(productId) {
+      let result = await getDoc(doc(db, "posts", productId));
+
+      getDoc(result.data().userRef).then((user) => {
+        setOwner(Object.assign(user.data(), { id: user.id }));
+      });
+    }
+
+    getOwnerInfo(productId);
+  }, [productId]);
+
+  // Get rate star
+  const [rateStar, setRateStar] = useState(0);
+  useEffect(() => {
+    async function getRateStar(productId) {
+      getDocs(
+        query(collection(db, "comments"), where("productId", "==", productId))
+      ).then((docs) => {
+        let count = 0
+        let rateSum = 0
+        docs.forEach((doc) => {
+          count++
+          rateSum += doc.data().rate
+        });
+
+        setRateStar(rateSum / count)
+      });
+    }
+
+    getRateStar(productId);
+  }, [productId]);
+
+  const [commentList, setCommentList] = useState([]);
+  async function getComments(productId) {
+    getDocs(
+      query(collection(db, "comments"), where("productId", "==", productId))
+    ).then((docs) => {
+      let result = [];
+      docs.forEach((doc) => {
+        result.push(Object.assign(doc.data(), { commentId: doc.id }));
+      });
+
+      setCommentList(result);
+    });
+  }
+  useEffect(() => {
+    getComments(productId);
+  }, [productId]);
+
+
+  const [filterCommentList, setFilterCommentList] = useState([]);
+  const [isPositive, setIsPositive] = useState(true);
+  const handleFilterPositive = () => {
+    setFilterCommentList(commentList.filter(el => el.rate >= 4))
+    setIsPositive(true)
+  }
+
+
+  const handleFilterNegative = () => {
+    setFilterCommentList(commentList.filter(el => el.rate > 0 && el.rate < 4))
+    setIsPositive(false)
+  }
+
   return (
     <div className="room_detail_container">
       <div className="room_detail">
         <div className="show_detail">
           <div className="row justify_space_around">
-            <div className="col-md-5 col-12 room_illustation">
+            <div className="col-md-7 col-12 room_illustation">
               <div className="show_detail_image_slider v-window carousel v-item-group theme--dark v-window--show-arrows-on-hover v-carousel v-carousel--hide-delimiter-background">
                 <div className="slideshow_container">
                   <div className="v-window-item">
-                    <ImageSlider slides={productDetail && productDetail.src}></ImageSlider>
+                    <ImageSlider
+                      slides={productDetail && productDetail.src}
+                    ></ImageSlider>
                   </div>
                 </div>
               </div>
@@ -95,19 +187,27 @@ function ProductDetail() {
                     <div className="item--content">
                       <div>
                         <div className="item--subtitle">Họ tên chủ trọ: </div>
-                        <div className="item--text">Lê Anh Sáu</div>
+                        <div className="item--text">
+                          {owner && owner.name}
+                        </div>
                       </div>
                       <div>
                         <div className="item--subtitle">
                           Số điện thoại liên hệ:{" "}
                         </div>
-                        <div className="item--text">0977194728</div>
+                        <div className="item--text">
+                          {owner && owner.phoneNumber}
+                        </div>
                       </div>
                       <div>
                         <div className="item--subtitle">
                           Kiểu phòng cho thuê:{" "}
                         </div>
-                        <div className="item--text">{productDetail && productDetail.category}</div>
+                        <div className="item--text">
+                          {productDetail && productDetail.category}
+                        </div>
+
+                        {/* <Link to={`/chat/${owner && owner.id}`}><BsMessenger className="ms-5" /></Link> */}
                       </div>
                     </div>
                   </div>
@@ -136,9 +236,12 @@ function ProductDetail() {
                             <td>Cơ sở vật chất</td>
                             <td>
                               <ul className="facilities ml-auto mr-auto">
-                                {productDetail && productDetail.facilities.map((e) => (
-                                  <li key={"facilities" + e}>{facilityOptions[e].label}</li>
-                                ))}
+                                {productDetail &&
+                                  productDetail.facilities.map((e) => (
+                                    <li key={"facilities" + e}>
+                                      {facilityOptions[e].label}
+                                    </li>
+                                  ))}
                               </ul>
                             </td>
                           </tr>
@@ -155,7 +258,9 @@ function ProductDetail() {
                       Giá thuê
                       <br />
                     </div>
-                    <div className="price">{productDetail && productDetail.price} triệu đồng/tháng</div>
+                    <div className="price">
+                      {productDetail && productDetail.price} triệu đồng/tháng
+                    </div>
                   </div>
                 </div>
               </div>
@@ -167,48 +272,107 @@ function ProductDetail() {
             <div className="item--title ribbon--title room_review_by_others_ribbon">
               Bình luận
             </div>
+
             <div className="room_reviews_list">
-              <ul>
-                <li className="comment_detail">
-                  <div className="user_avatar">
-                    <img className="user_avatar_img" src="" alt="useravatar3" />
+              <div className="row mb-3" style={{ height: "240px", backgroundColor: "rgb(240 226 216)" }}>
+                <div className="col-3 d-flex flex-column justify-content-center align-items-center">
+                  <div className="text-center">
+                    {Math.floor(rateStar * 10) / 10} trên 5
                   </div>
-                  <div className="user_text">
-                    <div className="comment_info">
-                      <div className="user_name">Kurisu</div>
-                      <div className="user_comment">
-                        Nhà đẹp, rộng rãi và thoáng mát
+                  <div className="text-center">
+                    {Array(Math.round(rateStar)).fill(0).map((_, index) => {
+                      return (
+                        <FaStar
+                          className="create_rating_stars"
+                          key={index}
+                          size={30}
+                          color={colors.orange}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="col-9 d-flex justify-content-start align-items-center">
+                  <Button variant="outline-success mx-2" onClick={handleFilterPositive}>Tích cực {isPositive && (filterCommentList.length)}</Button>
+                  <Button variant="outline-danger" onClick={handleFilterNegative}>Tiêu cực {!isPositive && (filterCommentList.length)}</Button>
+                </div>
+              </div>
+              <ul className="d-flex flex-column align-items-start">
+                {filterCommentList.length !== 0 ?
+                  filterCommentList.map((e) => (
+                    <li key={"filter" + e.commentId} className="comment_detail">
+                      <div className="user_avatar">
+                        <img
+                          style={{ borderRadius: "50%" }}
+                          width="50px"
+                          height="50px"
+                          className="user_avatar_img"
+                          src={e.sender.avatar}
+                        />
                       </div>
-                    </div>
-                  </div>
-                </li>
-                <li className="comment_detail">
-                  <div className="user_avatar">
-                    <img className="user_avatar_img" src="" alt="useravatar2" />
-                  </div>
-                  <div className="user_text">
-                    <div className="comment_info">
-                      <div className="user_name">Okarin</div>
-                      <div className="user_comment">
-                        Nhà nóng vkl, không phù hợp với một người như ta
+                      <div className="user_text">
+                        <div className="comment_info">
+                          <div className="user_name">
+                            <span className="me-2">{e.sender.name}</span>
+                            <span>
+                              {Array(e.rate)
+                                .fill(0)
+                                .map((e) => (
+                                  <FaStar
+                                    className="create_rating_stars"
+                                    size={15}
+                                    style={{
+                                      margin: 2,
+                                      cursor: "pointer",
+                                      color: "orange",
+                                    }}
+                                  />
+                                ))}
+                            </span>
+                          </div>
+                          <div className="user_comment">{e.comment}</div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </li>
-                <li className="comment_detail">
-                  <div className="user_avatar">
-                    <img className="user_avatar_img" src="" alt="useravatar" />
-                  </div>
-                  <div className="user_text">
-                    <div className="comment_info">
-                      <div className="user_name">Luffy</div>
-                      <div className="user_comment">
-                        Tiền nào của nấy, không có gì để khen và cũng không có
-                        gì để chê
+                    </li>
+                  ))
+                  :
+                  commentList &&
+                  commentList.map((e) => (
+                    <li key={e.commentId} className="comment_detail">
+                      <div className="user_avatar">
+                        <img
+                          style={{ borderRadius: "50%" }}
+                          width="50px"
+                          height="50px"
+                          className="user_avatar_img"
+                          src={e.sender.avatar}
+                        />
                       </div>
-                    </div>
-                  </div>
-                </li>
+                      <div className="user_text">
+                        <div className="comment_info">
+                          <div className="user_name">
+                            <span className="me-2">{e.sender.name}</span>
+                            <span>
+                              {Array(e.rate)
+                                .fill(0)
+                                .map((e) => (
+                                  <FaStar
+                                    className="create_rating_stars"
+                                    size={15}
+                                    style={{
+                                      margin: 2,
+                                      cursor: "pointer",
+                                      color: "orange",
+                                    }}
+                                  />
+                                ))}
+                            </span>
+                          </div>
+                          <div className="user_comment">{e.comment}</div>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
               </ul>
             </div>
           </div>
@@ -232,14 +396,8 @@ function ProductDetail() {
                         margin: 10,
                         cursor: "pointer",
                       }}
-                      color={
-                        (hoverValue || currentValue) > index
-                          ? colors.orange
-                          : colors.grey
-                      }
+                      color={rate > index ? colors.orange : colors.grey}
                       onClick={() => handleClick(index + 1)}
-                      onMouseOver={() => handleMouseOver(index + 1)}
-                      onMouseLeave={handleMouseLeave}
                     />
                   );
                 })}
@@ -250,11 +408,14 @@ function ProductDetail() {
               >
                 <textarea
                   style={ratingStyles.textarea}
+                  onChange={(e) => setComment(e.target.value)}
                   placeholder="Cảm nhận của bạn về phòng trọ này ..."
                 ></textarea>
+                <p style={{ color: "red" }}>{error && error}</p>
                 <button
                   style={ratingStyles.button}
                   className="button_submit_rating"
+                  onClick={() => handleSubmitComment()}
                 >
                   Gửi đánh giá
                 </button>

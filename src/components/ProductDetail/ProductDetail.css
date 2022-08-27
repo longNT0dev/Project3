@@ -149,19 +149,13 @@
 
 .comment_detail {
     display: flex;
-    flex-direction: row;
-    padding-bottom: 10px;
+    margin-bottom: 10px;
+    width: 100%;
 
 }
 
 .user_avatar {
-    width: 40%;
-    text-align: right;
-    margin-right: 15px;
-}
-
-.user_avatar_img {
-    width: 10%;
+    width: auto;
 }
 
 .user_text {    
@@ -178,6 +172,9 @@
 
 .user_name {
     font-weight: bold;
+    display: flex;
+    justify-content:space-between;
+    align-items: center;
 }
 
 

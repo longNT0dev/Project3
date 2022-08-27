@@ -87,10 +87,10 @@ const PreviewImage = ({files,setFiles}) => {
   }, [files]);
 
   return (
-    <section className="container">
+    <section>
       <div {...getRootProps({ className: "dropzone" })}>
         <input {...getInputProps()} />
-        <p style={{height:'100px',backgroundColor:'#f2e3e3',border:'1px dashed black',borderRadius:'5px',textAlign:'center',lineHeight:'100px'}}>Kéo thả hoặc bấm để chọn hình ảnh</p>
+        <p style={{height:'200px',backgroundColor:'#f2e3e3',border:'1px dashed black',borderRadius:'5px',textAlign:'center',lineHeight:'100px'}}>Kéo thả hoặc bấm để chọn hình ảnh</p>
       </div>
       <aside style={thumbsContainer}>{thumbs}</aside>
     </section>

@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "./ProductItem.module.scss";
 import { FaRegHeart } from "react-icons/fa";
+import { FaHeart } from "react-icons/fa";
 
 function ProductItem({
   id,
@@ -12,17 +13,36 @@ function ProductItem({
   category,
   area,
   address,
-  typeofNews,
+  typeNews,
   createdAt,
+  isFavorite,
+  setChangeLocal,
+  isNotShowFavorite
 }) {
+
+  const handleAddToFavorite = (id) => {
+    let favoriteList = JSON.parse(localStorage.favoritePost)
+
+    favoriteList.push(id)
+    localStorage.favoritePost = JSON.stringify(favoriteList)
+    setChangeLocal((prev) => !prev)
+  }
+
+  const handleDeleteFavorite = (id) => {
+    let favoriteList = JSON.parse(localStorage.favoritePost)
+    favoriteList = favoriteList.filter(f => f !== id)
+    localStorage.favoritePost = JSON.stringify(favoriteList)
+    setChangeLocal((prev) => !prev)
+  }
+
   return (
     <div className={styles.container + " d-flex"}>
       <Link to={`/products/${id}`} className={styles.productImage}>
         <img src={src} alt={title} style={{ borderRadius: "5px" }} />
         {
           {
-            0: null,
-            1: (
+            1: null,
+            3: (
               <div className={`${styles.typeNews} ${styles.hotBg}`}>
                 {"HOT".toUpperCase()}
               </div>
@@ -32,7 +52,7 @@ function ProductItem({
                 {"VIP".toUpperCase()}
               </div>
             ),
-          }[typeofNews]
+          }[typeNews]
         }
       </Link>
       <div
@@ -50,7 +70,7 @@ function ProductItem({
           <b>Giá: {price} triệu đồng/tháng</b>
         </div>
 
-        <p style={{textAlign: 'start'}} className="container-fluid">Địa chỉ: {address}</p>
+        <p style={{ textAlign: 'start' }} className="container-fluid">Địa chỉ: {address}</p>
 
         <div className="container-fluid d-flex justify-content-between">
           <span>Loại nhà: {category}</span>
@@ -59,9 +79,13 @@ function ProductItem({
 
         <div className="container-fluid d-flex justify-content-between">
           <span>Ngày đăng {createdAt}</span>
-          <span>
-            <FaRegHeart />
-          </span>
+          {
+            isNotShowFavorite ? null :
+              <span>
+                {isFavorite ? <FaHeart style={{ cursor: 'pointer' }} onClick={() => handleDeleteFavorite(id)} /> : <FaRegHeart style={{ cursor: 'pointer' }} onClick={() => handleAddToFavorite(id)} />}
+              </span>
+          }
+
         </div>
       </div>
     </div>

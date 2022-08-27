@@ -9,7 +9,8 @@ import {
   doc,
   updateDoc,
   query,
-  where
+  where,
+  orderBy
 } from "firebase/firestore";
 import {
   getStorage,
@@ -59,5 +60,6 @@ export {
   getDoc,
   updateDoc,
   query,
-  where
+  where,
+  orderBy
 };

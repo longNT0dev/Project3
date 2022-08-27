@@ -1,6 +1,5 @@
 import React from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import NewsManager from "../NewsManager/NewsManager";
 
 const childRoute = [
   { link: "/account", title: "Thông tin tài khoản" },
@@ -11,31 +10,32 @@ const childRoute = [
 ];
 
 function Info() {
-
-  const location = useLocation()     
+  const location = useLocation();
 
   const isActiveLink = (currentPath) => {
-      if(location.pathname === currentPath) { return ' active'}
-      return ''
-  }
+    if (location.pathname === currentPath) {
+      return " active";
+    }
+    return "";
+  };
 
   return (
-    <>
-      <div className="container" style={{ transform: "translateY(150px)" }}>
-        <div className="row">
-          <ul className="nav nav-pills">
-            {childRoute.map((e) => (
-              <li key={e.link} className='nav-item'>
-                <Link className={'nav-link' + isActiveLink(e.link)} to={e.link}>
-                  {e.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <Outlet></Outlet>
-        </div>
+    <div style={{ transform: "translateY(140px)",height:'auto' }} className="container flex-column align-items-start">
+      <div className="row container">
+        <ul className="nav nav-pills border">
+          {childRoute.map((e) => (
+            <li key={e.link} className="nav-item">
+              <Link className={"nav-link" + isActiveLink(e.link)} to={e.link}>
+                {e.title}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </div>
-    </>
+      <div className="row container pt-3">
+        <Outlet></Outlet>
+      </div>
+    </div>
   );
 }
 

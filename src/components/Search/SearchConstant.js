@@ -1,6 +1,6 @@
 // Theo loại phòng
 const roomOptions = [
-  { value: "1", label: "Phòng trọ" },
+  { value: "1", label: "Phòng trọ đơn" },
   { value: "2", label: "Chung cư mini" },
   { value: "3", label: "Nhà nguyên căn" },
 ];
